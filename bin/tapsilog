@@ -46,8 +46,8 @@ module Palmade
         opts.on('-w','--writepid [FILENAME]',"The filename to write a PID file to.") do |pidfile|
           config[:pidfile] = pidfile
         end.parse!
-        config
       end
+      config
     end
 
     def symbolize_keys(hash)

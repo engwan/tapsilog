@@ -5,22 +5,28 @@ module Palmade::Tapsilog
 
     attr_reader :now
 
-    def self.start(config, protocol = "")
-      self.new(config).start(protocol)
-    end
-
-    def initialize(config)
+    def self.start(config, protocol = Palmade::Tapsilog::Protocol)
       @config = config
+      @protocol = protocol
+      boot
     end
 
-    def start(protocol = "")
-      daemonize if @config['daemonize']
-      start_server(protocol)
+    def self.add_log(log)
+      STDERR.puts "#{@now}: #{log}"
+    end
+
+    def self.key
+      @config[:key].to_s
     end
 
     protected
 
-    def daemonize
+    def self.boot
+      daemonize if @config['daemonize']
+      start_server
+    end
+
+    def self.daemonize
       if (child_pid = fork)
         puts "Forked PID #{child_pid}"
         exit!
@@ -31,14 +37,23 @@ module Palmade::Tapsilog
       puts "Platform (#{RUBY_PLATFORM}) does not appear to support fork/setsid; skipping" 
     end
 
-    def start_server(protocol)
+    def self.start_server
       EventMachine.run {
+        EventMachine.start_server('127.0.0.1', '12345', @protocol)
         EventMachine.add_periodic_timer(1) { update_now }
+        EventMachine.add_periodic_timer(@config[:interval]) { write_queue }
+        EventMachine.add_periodic_timer(@config[:syncinterval]) { flush_queue }
       }
     end
 
-    def update_now
-      @now = Time.now.strftime('%Y/%m/%d $H:%M:%S')
+    def self.update_now
+      @now = Time.now.strftime('%Y/%m/%d %H:%M:%S')
+    end
+
+    def self.write_queue
+    end
+
+    def self.flush_queue
     end
 
   end
