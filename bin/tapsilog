@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+require 'optparse'
+require 'palmade/tapsilog'
+
+module Palmade
+  class TapsilogExec
+
+    def self.run
+      @@parsed_options ||= parse_options
+      Palmade::Tapsilog::Server.start(@@parsed_options)
+    end
+
+    def self.parse_options(config = {})
+      OptionParser.new do |opts|
+        opts.banner = 'Usage: tapsilog [options]'
+        opts.separator ''
+        opts.on('-c','--config CONFFILE',"The configuration file to read.") do |conf|
+          config = symbolize_keys(YAML.load(File.read(conf)))
+        end
+        opts.on('-p','--port [PORT]',Integer,"The port to receive connections on.") do |port|
+          config[:port] = port
+        end
+        opts.on('-h','--host [HOST]',String,"The host to bind the connection to.") do |host|
+          config[:host] = host
+        end
+        opts.on('-t','--socket [SOCKET]',String,"The unix domain socket to bind connection to.") do |socket|
+          config[:socket] = socket
+        end
+        opts.on('-k','--key [KEY]',String,"The secret key that authenticates a valid client session.") do |secret|
+          config[:key] = secret
+        end
+        opts.on('-i','--interval [INTERVAL]',String,"The interval between queue writes.  Defaults to 1 second.") do |interval|
+          config[:interval] = interval
+        end
+        opts.on('-s','--syncinterval [INTERVAL]',String,"The interval between queue syncs.  Defaults to 60 seconds.") do |interval|
+          config[:syncinterval] = interval
+        end
+        opts.on('-d','--default [PATH]',String,"The default log destination.  Defaults to stdout.") do |default|
+          config[:default_log] = default
+        end
+        opts.on('-x','--daemonize',"Tell the Analogger to daemonize itself.") do
+          config[:daemonize] = true
+        end
+        opts.on('-w','--writepid [FILENAME]',"The filename to write a PID file to.") do |pidfile|
+          config[:pidfile] = pidfile
+        end.parse!
+      end
+      config
+    end
+
+    def symbolize_keys(hash)
+      hash.inject({}){|result, (key, value)|  
+        new_key = key.kind_of? String ? key.to_sym : key  
+        new_value = value.kind_of? Hash ? symbolize_keys(value) : value  
+        result[new_key] = new_value  
+        result  
+      }
+    end
+
+  end
+end
+
+loop do
+  catch(:hup) {
+    Palmade::TapsilogExec.run
+  }
+end
