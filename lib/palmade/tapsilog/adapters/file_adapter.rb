@@ -1,10 +1,5 @@
 module Palmade::Tapsilog::Adapters
-  class FileAdapter
-
-    def initialize(config)
-      @config = config
-      initialize_services
-    end
+  class FileAdapter < BaseAdapter
 
     def write(log_message)
       service = log_message[1]
@@ -32,37 +27,26 @@ module Palmade::Tapsilog::Adapters
 
     protected
  
-    def initialize_services
-      @services = {}
-      
-      @config[:services].each do |service|
-        service_name = service['service']
-        @services[service_name] = {
-          :logfile => service['logfile']
-        }
-      end
-    end 
-
     def get_file_descriptor(service_name)
       service_name = (@services[service_name].nil?) ? 'default' : service_name
       service = @services[service_name]
 
       if service[:file].nil?
-        open_file_descriptor(service)
-      else
-        service[:file]
+        service[:file] = open_file_descriptor(service)
       end
+
+      service[:file]
     end
 
     def open_file_descriptor(service)
-      logfile = service[:logfile]
+      logfile = service[:target]
 
       if logfile =~ /^STDOUT$/i
-        service[:file] = $stdout
+        $stdout
       elsif logfile =~ /^STDERR$/i
-        service[:file] = @stderr
+        $stderr
       else
-        service[:file] = File.open(logfile, 'ab+')
+        File.open(logfile, 'ab+')
       end
     end
 
