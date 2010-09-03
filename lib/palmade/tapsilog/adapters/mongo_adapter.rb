@@ -26,8 +26,8 @@ module Palmade::Tapsilog::Adapters
     end
 
     def log_to_hash(log_message)
-      timestamp, service, pid, severity, message = log_message
-      {
+      timestamp, service, pid, severity, message, tags = log_message
+      log_hash = {
         :timestamp => timestamp,
         :service => service,
         :pid => pid,
@@ -35,6 +35,11 @@ module Palmade::Tapsilog::Adapters
         :message => message,
         :created_at => Time.now
       }
+      unless tags.nil? or tags.empty?
+        log_hash[:tags] = Palmade::Tapsilog::Utils::query_string_to_hash(tags)
+      end
+
+      log_hash
     end
 
     def db_conn

@@ -39,7 +39,7 @@ module Palmade::Tapsilog
         return true
       else
         peer = get_peername
-        peer = peer ? ::Socket.unpack_sockaddr_in(peer)[1] : 'UNK'
+        peer = (peer ? ::Socket.unpack_sockaddr_in(peer)[1] : 'UNK') rescue 'UNK'
 
         if l == ck
           LoggerClass.add_log([:default, $$.to_s, :error, "Max Length Exceeded from #{peer} -- #{l}/#{MaxMessageLength}"])
@@ -53,7 +53,7 @@ module Palmade::Tapsilog
     end
 
     def get_message
-      msg = @logchunk.slice!(0..@length).split(Rcolon,5)
+      msg = @logchunk.slice!(0..@length).split(Rcolon, 6)
 
       unless @authenticated
         @authenticated = authenticate_message(msg)
@@ -71,11 +71,11 @@ module Palmade::Tapsilog
     end
 
     def authenticate_message(msg)
-      if msg.last == LoggerClass.key
+      if msg[4] == LoggerClass.key
         return true
       else
         peer = get_peername
-        peer = peer ? ::Socket.unpack_sockaddr_in(peer)[1] : 'UNK'
+        peer = (peer ? ::Socket.unpack_sockaddr_in(peer)[1] : 'UNK') rescue 'UNK'
 
         LoggerClass.add_log([:default, $$.to_s, :error, "Invalid key from #{peer} -- #{msg.last}"])
         close_connection
