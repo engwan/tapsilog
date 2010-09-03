@@ -1,6 +1,6 @@
 require 'echoe'
 
-Echoe.new('tapsilog', '0.0.1') do |p|
+Echoe.new('tapsilog', '0.1.0') do |p|
   p.author         = "Palmade"
   p.project        = "tapsilog"
   p.summary        = "Hydrid app-level logger from Palmade. Analogger fork."
